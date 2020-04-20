@@ -1,0 +1,16 @@
+<html>
+	<head>
+		<title>Pub Quiz Control</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+	</head>
+	<body>
+		<h1>Pub Quiz</h1>
+		<form action='/control' method="POST">
+			<button name="prev">prev</button>
+			<button name="next">next</button>
+			<br>
+			<button name="kick_players">Kick Players</button>
+			<button name="reset_state">Reset Quiz</button>
+		</form>
+	</body>
+</html>

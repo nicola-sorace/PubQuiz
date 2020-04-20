@@ -1,0 +1,20 @@
+{% extends "quiz.html" %}
+
+{% block content %}
+
+<h2>Round {{ r_num }}:</h2>
+{% for i, question in enumerate(questions) %}
+<div class="question">
+<h3>Question {{ i+1 }}</h3>
+{{ question['question'] }}<br>
+{% if question['type'] == 'entry' %}
+<input type="text" size="32" name="ans_{{i}}" id="ans_{{i}}" class="answer"
+{% if i in answers %}
+value="{{ answers[i] }}"
+{% endif %}
+>
+{% endif %}
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "quiz.html" %}
+
+{% block content %}
+
+<h2>Round {{ r_num }}:</h2>
+{% for i, question in enumerate(questions) %}
+<div class="question">
+<h3>Question {{ i+1 }}</h3>
+Q: {{ question['question'] }}<br>
+A: <em>{{ question['answer'] }}</em><br>
+{% for response in responses[i] %}
+<div class="final_answer">
+	<h4>{{ response['name'] }}</h4>
+	<span>{{ response['answer'] }}</span>
+</div>
+{% endfor %}
+</div>
+{% endfor %}
+
+{% endblock %}

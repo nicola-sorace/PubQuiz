@@ -1,0 +1,52 @@
+body {
+	background-color: #77aacc;
+	padding: 1em;
+}
+
+@keyframes spin { 100% { transform:rotate(360deg); } }
+img.loading {
+	animation: spin 1s linear infinite;
+	width: 1em;
+}
+
+div.question {
+	background-color: #bbbbff;
+	padding: 1.5em;
+	border-radius: 0.5em;
+	margin-bottom: 1em;
+}
+
+div.question h3 {
+	font-size: 16pt;
+	margin-top: 0em;
+	margin-bottom: 0.5em;
+}
+
+*.answer {
+	background-color: #ffffff;
+	color: #000000;
+	padding: 0.5em;
+	border: solid 2px #333;
+	border-radius: 0.3em;
+	margin-top: 0.5em;
+	margin-right: 0.5em;
+	transition: background-color 0.3s;
+}
+
+*.answer.pending {
+	background-color: #eeeeaa;
+}
+
+div.final_answer {
+	display: inline-block;
+	background-color: #aaaaff;
+	padding: 1em;
+	margin-top: 1em;
+	margin-right: 1em;
+	border-radius: 0.5em;
+}
+
+div.final_answer h4 {
+	margin: 0;
+}
+
