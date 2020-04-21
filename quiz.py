@@ -20,7 +20,7 @@ def init_db():
     cur = db.cursor()
     cur.execute('CREATE TABLE IF NOT EXISTS players ( name TEXT, score INT, last_seen INT )')
     cur.execute('DELETE FROM players')
-    cur.execute('CREATE TABLE IF NOT EXISTS questions ( r_num INT, q_num INT, question TEXT, type TEXT, choices TEXT, answer TEXT )')
+    cur.execute('CREATE TABLE IF NOT EXISTS questions ( r_num INT, q_num INT, question TEXT, type TEXT, choices TEXT, answer TEXT, score INT )')
     cur.execute('CREATE TABLE IF NOT EXISTS responses ( r_num INT, q_num INT, name TEXT, answer TEXT )')
     cur.execute('CREATE TABLE IF NOT EXISTS state ( r_num INT, q_num INT, done INT )')
     cur.execute('INSERT INTO state (r_num, q_num, done) VALUES (0,0,0) ')
@@ -108,34 +108,60 @@ def control():
     done = int(state['done'])
     if request.method == 'POST':
         if request.form.get('next') != None:
-            print('next')
-            if done or r_num == 0:
-                next_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num+1, 1)).fetchone()
-                if next_q != None:
-                    r_num += 1
-                    q_num = 0
-                    done = 0
+            # Move quiz forward
+
+            next_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num+1)).fetchone()
+            if next_q != None:
+                # Next question
+                q_num += 1
             else:
-                next_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num+1)).fetchone()
-                if next_q != None:
-                    q_num += 1
+                if not done and r_num > 0:
+                    # Round done; Start going through answers
+                    done = 1
+                    q_num = 0
                 else:
-                    done = 1
+                    # Next round
+                    next_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num+1, 1)).fetchone()
+                    if next_q != None:
+                        r_num += 1
+                        q_num = 0
+                        done = 0
         elif request.form.get('prev') != None:
-            print('prev')
-            if done:
-                done = 0
-            elif q_num == 0:
-                if r_num == 1:
-                    r_num = 0
-                    q_num = 0
-                elif r_num != 0:
-                    prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num-1, )).fetchone()
-                    r_num -= 1
-                    q_num = prev_q['q_num']
-                    done = 1
-            else:
+            # Move quiz backwards
+            prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num-1)).fetchone()
+            if prev_q != None or q_num == 1:
+                # Previous question or restart round
                 q_num -= 1
+            else:
+                if done:
+                    # Reopen round
+                    prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num, )).fetchone()
+                    done = 0
+                    q_num = prev_q['q_num']
+                else:
+                    if r_num <= 1:
+                        # Back to waiting for quiz to start
+                        r_num = 0
+                    else:
+                        # Back to previous round's answers
+                        prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num-1, )).fetchone()
+                        done = 1
+                        q_num = prev_q['q_num']
+
+
+            # if done:
+                # done = 0
+            # elif q_num == 0:
+                # if r_num == 1:
+                    # r_num = 0
+                    # q_num = 0
+                # elif r_num != 0:
+                    # prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num-1, )).fetchone()
+                    # r_num -= 1
+                    # q_num = prev_q['q_num']
+                    # done = 1
+            # else:
+                # q_num -= 1
 
 
         elif request.form.get('kick_players') != None:
@@ -158,7 +184,7 @@ def login():
     if 'name' in request.form:
         session['name'] = name = request.form['name']
         db = get_db()
-        db.cursor().execute('INSERT INTO players (name, score, admin, last_seen) VALUES (?, 0, ?, ?)', (name, int(name==SECRET_ADMIN_NAME), int(time.time())))
+        db.cursor().execute('INSERT INTO players (name, score, last_seen) VALUES (?, 0, ?)', (name, int(time.time())))
         db.commit()
         return redirect('/', code=302)
     return render_template('login.html')

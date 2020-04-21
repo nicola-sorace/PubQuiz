@@ -40,16 +40,19 @@ img.con_err {
 }
 
 div.player_list {
-	font-size: 12pt;
+	font-size: 16pt;
 	background-color: #bbbbff;
 	width: 22em;
 	border-radius: 0.5em;
 	padding-top: 0.01em;
 	margin-top: 1em;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 div.player_list h2 {
-	margin-left: 1em;
+	font-size: 18pt;
+	text-align: center;
 }
 
 div.player_list ul {
