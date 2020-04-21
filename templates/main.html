@@ -5,7 +5,6 @@
 	</head>
 	<body>
 		<h1>Pub Quiz</h1>
-		Welcome, {{ name }}
 
 		<div id="quiz_view">
 			<img src="{{ url_for('static', filename='loading.svg') }}" class="loading">
@@ -73,6 +72,7 @@
 					for (var i=0; i<ans_vals.length; i++) {
 						ans_elems[i].value = answers[i].value;
 					}
+					document.getElementsByClassName('player_list')[0].innerHTML = el.getElementsByClassName('player_list')[0].innerHTML;
 				}
 
 				<!--Restore current answers-->
@@ -114,7 +114,7 @@
 			var answers = document.getElementsByClassName('answer');
 			for (var i=0; i<answers.length; i++) {
 				var ans = answers[i];
-				post_string += ans.id + '=' + ans.value;
+				post_string += ans.id + '=' + encodeURIComponent(ans.value);
 				if (i < answers.length -1) {
 					post_string += '&';
 				}

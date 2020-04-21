@@ -1,9 +1,20 @@
+<div class="player_list">
 <h2>Players</h2>
 <ul>
 	{% for player in players %}
-	<li>{{ player['name'] }}</li>
+	{% if player['name'] == name %}
+	<li class="me">
+	{% else %}
+	<li>
+	{% endif %}
+		{{ player['name'] }} <span class="score">{{ player['score'] }}</span>
+		{% if now_time - player['last_seen'] > 1 %}
+		<img class="con_err" src={{ url_for('static', filename='con_err.svg') }}>
+		{% endif %}
+	</li>
 	{% endfor %}
 </ul>
+</div>
 
 {% block content %}
 {% endblock %}

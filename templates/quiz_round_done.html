@@ -9,7 +9,11 @@
 Q: {{ question['question'] }}<br>
 A: <em>{{ question['answer'] }}</em><br>
 {% for response in responses[i] %}
+{% if response['name'] == name %}
+<div class="final_answer me">
+{% else %}
 <div class="final_answer">
+{% endif %}
 	<h4>{{ response['name'] }}</h4>
 	<span>{{ response['answer'] }}</span>
 </div>

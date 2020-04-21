@@ -1,6 +1,25 @@
+@font-face {
+	font-family: Roboto;
+	src: url(Roboto-Regular.ttf);
+}
+
+* {
+	font-family: Roboto;
+}
+
 body {
+	font-size: 24pt;
 	background-color: #77aacc;
 	padding: 1em;
+}
+
+h1 {
+	font-size: 25pt;
+	text-align: center;
+}
+
+h2 {
+	font-size: 24pt;
 }
 
 @keyframes spin { 100% { transform:rotate(360deg); } }
@@ -9,7 +28,60 @@ img.loading {
 	width: 1em;
 }
 
+img.con_err {
+	position: absolute;
+	right: -2em;
+	top: 0.5em;
+	background-color: #aaaaff;
+	margin-left: 0.5em;
+	width: 2em;
+	padding: 0.2em;
+	border-radius: 0.5em;
+}
+
+div.player_list {
+	font-size: 12pt;
+	background-color: #bbbbff;
+	width: 22em;
+	border-radius: 0.5em;
+	padding-top: 0.01em;
+	margin-top: 1em;
+}
+
+div.player_list h2 {
+	margin-left: 1em;
+}
+
+div.player_list ul {
+	list-style-type: none;
+	padding: 0;
+	padding-bottom: 0.01em;
+}
+
+div.player_list ul li {
+	position: relative;
+	background-color: #aaaaff;
+	font-weight: bold;
+	padding: 1em;
+	padding-left: 1.5em;
+	margin-bottom: 1em;
+}
+div.player_list ul li.me {
+	background-color: #aaeeaa;
+}
+
+div.player_list ul li span.score {
+	position: absolute;
+	right: 2em;
+	top: 0.6em;
+	color: #ffcc00;
+	background-color: #999;
+	padding: 0.4em;
+	border-radius: 0.4em;
+}
+
 div.question {
+	font-size: 24pt;
 	background-color: #bbbbff;
 	padding: 1.5em;
 	border-radius: 0.5em;
@@ -23,6 +95,7 @@ div.question h3 {
 }
 
 *.answer {
+	font-size: 24pt;
 	background-color: #ffffff;
 	color: #000000;
 	padding: 0.5em;
@@ -44,6 +117,10 @@ div.final_answer {
 	margin-top: 1em;
 	margin-right: 1em;
 	border-radius: 0.5em;
+}
+
+div.final_answer.me {
+	background-color: #aaeeaa;
 }
 
 div.final_answer h4 {
