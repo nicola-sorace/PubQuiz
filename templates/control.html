@@ -5,12 +5,33 @@
 	</head>
 	<body>
 		<h1>Pub Quiz</h1>
+
 		<form action='/control' method="POST">
-			<button name="prev">prev</button>
-			<button name="next">next</button>
-			<br>
+			<button name="prev">⮜⮜⮜</button>
+			<button name="next">⮞⮞⮞</button>
+		</form>
+
+		{% if responses != None %}
+
+		<form action='/control' method="POST">
+			<table>
+				<tr><th>Name</th><th>Answer</th><th>Score</th></tr>
+				{% for response in responses %}
+				<tr>
+					<td>{{ response['name'] }}</td> <td>{{ response['answer'] }}</td>
+					<td><input type="number" size=2 name="resp_{{ response['name'] }}" value={{ response['score'] }} min=0 max={{ max_score }} step=1></td>
+				</tr>
+				{% endfor %}
+			</table>
+			<input type="submit" name="update_scores" value="Update scores">
+		</form>
+
+		{% endif %}
+
+		<form action='/control' method="POST">
+			<button name="reset_state">Reset State</button>
+			<button name="reset_responses">Reset Responses</button>
 			<button name="kick_players">Kick Players</button>
-			<button name="reset_state">Reset Quiz</button>
 		</form>
 	</body>
 </html>

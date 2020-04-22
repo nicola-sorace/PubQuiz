@@ -5,12 +5,17 @@
 <h2>Round {{ r_num }}</h2>
 {% for i, question in enumerate(questions) %}
 <div class="question">
+{% if question['score'] == 1 %}
+<span class="score">{{ question['score'] }} point</span>
+{% else %}
+<span class="score">{{ question['score'] }} points</span>
+{% endif %}
 <h3>Question {{ i+1 }}</h3>
 {{ question['question'] }}<br>
 {% if question['type'] == 'entry' %}
-<input type="text" size="32" name="ans_{{i}}" id="ans_{{i}}" class="answer"
-{% if i in answers %}
-value="{{ answers[i] }}"
+<input type="text" size="32" name="ans_{{i+1}}" id="ans_{{i+1}}" class="answer"
+{% if i+1 in answers %}
+value="{{ answers[i+1] }}"
 {% endif %}
 >
 {% endif %}

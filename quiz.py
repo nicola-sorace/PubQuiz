@@ -21,9 +21,11 @@ def init_db():
     cur.execute('CREATE TABLE IF NOT EXISTS players ( name TEXT, score INT, last_seen INT )')
     cur.execute('DELETE FROM players')
     cur.execute('CREATE TABLE IF NOT EXISTS questions ( r_num INT, q_num INT, question TEXT, type TEXT, choices TEXT, answer TEXT, score INT )')
-    cur.execute('CREATE TABLE IF NOT EXISTS responses ( r_num INT, q_num INT, name TEXT, answer TEXT )')
+    cur.execute('CREATE TABLE IF NOT EXISTS responses ( r_num INT, q_num INT, name TEXT, answer TEXT, score INT )')
     cur.execute('CREATE TABLE IF NOT EXISTS state ( r_num INT, q_num INT, done INT )')
-    cur.execute('INSERT INTO state (r_num, q_num, done) VALUES (0,0,0) ')
+    state = cur.execute('SELECT * FROM state').fetchone()
+    if state == None:
+        cur.execute('INSERT INTO state (r_num, q_num, done) VALUES (0,0,0) ')
     db.commit()
 
 @app.teardown_appcontext
@@ -47,7 +49,7 @@ def quiz_view():
         db.commit()
     
     state = cur.execute('SELECT * FROM state').fetchone()
-    players = cur.execute('SELECT * FROM players WHERE name!=?', (SECRET_ADMIN_NAME,)).fetchall()
+    players = cur.execute('SELECT * FROM players WHERE name!=? ORDER BY score DESC', (SECRET_ADMIN_NAME,)).fetchall()
     r_num = state['r_num']
     q_num = state['q_num']
 
@@ -55,6 +57,9 @@ def quiz_view():
         return render_template('quiz_not_started.html', players=players, name=name, now_time=now_time)
 
     questions = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num<=? ORDER BY r_num, q_num ASC', (r_num, q_num)).fetchall()
+    questions = [ dict(question) for question in questions ]
+    for question in questions:
+        question['first_answer'] = question['answer'].split(',')[0]
     responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND name=?', (r_num, name)).fetchall()
 
     if state['done'] == 0: # Active round
@@ -71,7 +76,7 @@ def quiz_view():
                 org_responses[q] = [response]
             else:
                 org_responses[q].append(response)
-        return render_template('quiz_round_done.html', players=players, name=name, now_time=now_time, r_num=r_num, questions=questions, responses=org_responses, enumerate=enumerate)
+        return render_template('quiz_round_done.html', players=players, name=name, now_time=now_time, r_num=r_num, questions=questions, responses=org_responses, state=state, enumerate=enumerate, len=len)
 
 @app.route('/quiz_endpoint', methods=['POST'])
 def quiz_endpoint():
@@ -91,11 +96,24 @@ def quiz_endpoint():
             ans_val = request.form[param]
             r = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=? AND name=?', (r_num, q_num, name)).fetchone()
             if r == None:
-                cur.execute('INSERT INTO responses (r_num, q_num, name, answer) VALUES (?,?,?,?)', (r_num, q_num, name, ans_val))
+                cur.execute('INSERT INTO responses (r_num, q_num, name, answer, score) VALUES (?,?,?,?, 0)', (r_num, q_num, name, ans_val))
             else:
-                cur.execute('UPDATE responses SET answer=? WHERE r_num=? AND q_num=? AND name=?', (ans_val, r_num, q_num, name))
+                cur.execute('UPDATE responses SET answer=? WHERE r_num=? AND q_num=? AND name=? AND score=0', (ans_val, r_num, q_num, name))
     db.commit()
     return 'ok'
+
+def update_scores():
+    db = get_db()
+    cur = db.cursor()
+    players = cur.execute('SELECT name FROM players').fetchall()
+    for player in players:
+        print(player)
+        score = cur.execute('SELECT SUM(score) FROM responses WHERE name=?', (player['name'],)).fetchone()[0]
+        if score == None:
+            score = 0
+        cur.execute('UPDATE players SET score=? WHERE name=?', (score, player['name']))
+    db.commit()
+
 
 @app.route('/control', methods=['GET', 'POST'])
 def control():
@@ -106,14 +124,21 @@ def control():
     r_num = int(state['r_num'])
     q_num = int(state['q_num'])
     done = int(state['done'])
+    # Done=1: About to reveal answer (suspense); Done=2: Answer revealed
+
     if request.method == 'POST':
         if request.form.get('next') != None:
             # Move quiz forward
-
             next_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num+1)).fetchone()
-            if next_q != None:
+            if done == 1 and q_num > 0:
+                # Reveal answer
+                done = 2;
+            elif next_q != None:
                 # Next question
                 q_num += 1
+                if done == 2:
+                    # Move to next answer but don't reveal yet
+                    done = 1
             else:
                 if not done and r_num > 0:
                     # Round done; Start going through answers
@@ -126,12 +151,22 @@ def control():
                         r_num += 1
                         q_num = 0
                         done = 0
+
         elif request.form.get('prev') != None:
             # Move quiz backwards
             prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num-1)).fetchone()
-            if prev_q != None or q_num == 1:
+            if done == 2:
+                done = 1
+            elif prev_q != None or q_num == 1:
                 # Previous question or restart round
                 q_num -= 1
+                if done:
+                    if q_num != 0:
+                        # Last answer is already revealed
+                        done = 2
+                    else:
+                        # Restart round
+                        done = 1
             else:
                 if done:
                     # Reopen round
@@ -145,48 +180,62 @@ def control():
                     else:
                         # Back to previous round's answers
                         prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num-1, )).fetchone()
-                        done = 1
+                        done = 2
                         q_num = prev_q['q_num']
-
-
-            # if done:
-                # done = 0
-            # elif q_num == 0:
-                # if r_num == 1:
-                    # r_num = 0
-                    # q_num = 0
-                # elif r_num != 0:
-                    # prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num-1, )).fetchone()
-                    # r_num -= 1
-                    # q_num = prev_q['q_num']
-                    # done = 1
-            # else:
-                # q_num -= 1
-
 
         elif request.form.get('kick_players') != None:
             cur.execute('DELETE FROM players')
         elif request.form.get('reset_state') != None:
             cur.execute('DELETE FROM state')
-            cur.execute('DELETE FROM responses')
             r_num = 0
             q_num = 0
             done = 0
             cur.execute('INSERT INTO state (r_num) VALUES (0)')
+        elif request.form.get('reset_responses') != None:
+            cur.execute('DELETE FROM responses')
+            update_scores()
 
         cur.execute('UPDATE state SET r_num=?, q_num=?, done=?', (r_num, q_num, done))
         db.commit()
 
-    return render_template('control.html')
+    if done == 2:
+        # Show question-scoring tools
+        responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchall()
+        max_score = cur.execute('SELECT score FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchone()[0]
+    else:
+        responses = None
+        max_score = None
+
+    if request.method == 'POST' and request.form.get('update_scores'):
+        print('updating scores')
+        for response in responses:
+            name = response['name']
+            score = request.form['resp_'+name]
+            cur.execute('UPDATE responses SET score=? WHERE r_num=? AND q_num=? AND name=?', (score, r_num, q_num, name))
+        db.commit()
+        update_scores()
+
+        # Update responses so that control page shows the right scores
+        responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchall()
+
+    return render_template('control.html', responses=responses, max_score=max_score)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'name' in request.form:
-        session['name'] = name = request.form['name']
+        name = request.form['name']
+
         db = get_db()
-        db.cursor().execute('INSERT INTO players (name, score, last_seen) VALUES (?, 0, ?)', (name, int(time.time())))
-        db.commit()
-        return redirect('/', code=302)
+        player = db.cursor().execute('SELECT * FROM players WHERE name=?', (name,)).fetchone()
+        if player == None or (time.time() - player['last_seen']) > 4 or name == session.get('name'):
+            # Player name is available, login
+            db.cursor().execute('INSERT INTO players (name, score, last_seen) VALUES (?, 0, ?)', (name, int(time.time())))
+            db.commit()
+            session['name'] = name
+            return redirect('/', code=302)
+        else:
+            # Player name is taken
+            return 'This user is already logged in!'
     return render_template('login.html')
 
 def new_secret():

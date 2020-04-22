@@ -1,3 +1,5 @@
+/* General */
+
 @font-face {
 	font-family: Roboto;
 	src: url(Roboto-Regular.ttf);
@@ -28,16 +30,7 @@ img.loading {
 	width: 1em;
 }
 
-img.con_err {
-	position: absolute;
-	right: -2em;
-	top: 0.5em;
-	background-color: #aaaaff;
-	margin-left: 0.5em;
-	width: 2em;
-	padding: 0.2em;
-	border-radius: 0.5em;
-}
+/* Player List */
 
 div.player_list {
 	font-size: 16pt;
@@ -48,6 +41,18 @@ div.player_list {
 	margin-top: 1em;
 	margin-left: auto;
 	margin-right: auto;
+	box-shadow: 0px 3px 10px 0px rgba(0,0,0, 0.2);
+}
+
+img.con_err {
+	position: absolute;
+	right: -2em;
+	top: 0.5em;
+	background-color: #aaaaff;
+	margin-left: 0.5em;
+	width: 2em;
+	padding: 0.2em;
+	border-radius: 0.5em;
 }
 
 div.player_list h2 {
@@ -77,18 +82,32 @@ div.player_list ul li span.score {
 	position: absolute;
 	right: 2em;
 	top: 0.6em;
-	color: #ffcc00;
-	background-color: #999;
+	color: #ffdd00;
+	background-color: #333;
 	padding: 0.4em;
 	border-radius: 0.4em;
 }
 
+/* Questions */
+
 div.question {
+	position: relative;
 	font-size: 24pt;
 	background-color: #bbbbff;
 	padding: 1.5em;
 	border-radius: 0.5em;
 	margin-bottom: 1em;
+	box-shadow: 0px 3px 10px 0px rgba(0,0,0, 0.2);
+}
+
+div.question > span.score {
+	font-size: 13pt;
+	position: absolute;
+	right: 4em;
+	top: 2.5em;
+	color: #444;
+	padding: 0.4em;
+	border-radius: 0.6em;
 }
 
 div.question h3 {
@@ -113,13 +132,17 @@ div.question h3 {
 	background-color: #eeeeaa;
 }
 
+/* Done Questions */
+
 div.final_answer {
+	position: relative;
 	display: inline-block;
 	background-color: #aaaaff;
 	padding: 1em;
 	margin-top: 1em;
 	margin-right: 1em;
 	border-radius: 0.5em;
+	box-shadow: 0px 3px 10px 0px rgba(0,0,0, 0.2);
 }
 
 div.final_answer.me {
@@ -130,3 +153,47 @@ div.final_answer h4 {
 	margin: 0;
 }
 
+div.final_answer span.score {
+	font-size: 14pt;
+	font-weight: bold;
+	position: absolute;
+	right: -1em;
+	bottom: -1em;
+	width: 2em;
+	height: 2em;
+	text-align: center;
+	line-height: 2em;
+	background-color: #cc0;
+	color: #333;
+	padding: 0.5em;
+	border-radius: 2em;
+	box-shadow: 0px 3px 10px 0px rgba(0,0,0, 0.2);
+}
+
+div.final_answer span.score.good {
+	background-color: #0c0;
+	color: #fff;
+}
+
+div.final_answer span.score.bad {
+	background-color: #c00;
+	color: #fff;
+}
+
+/* Control Page */
+
+table, th, td {
+	border-collapse: collapse;
+	border: solid 1px #333;
+	padding: 0.5em;
+}
+
+input[type="submit"], button {
+	font-size: 14pt;
+	background-color: #338;
+	color: #fff;
+	padding: 0.5em;
+	border-radius: 0.5em;
+	border: solid 4px #333;
+	margin: 0.1em;
+}

@@ -5,10 +5,18 @@
 <h2>Round {{ r_num }} Answers</h2>
 {% for i, question in enumerate(questions) %}
 <div class="question">
+{% if question['score'] == 1 %}
+<span class="score">{{ question['score'] }} point</span>
+{% else %}
+<span class="score">{{ question['score'] }} points</span>
+{% endif %}
 <h3>Question {{ i+1 }}</h3>
-Q: {{ question['question'] }}<br>
-A: <em>{{ question['answer'] }}</em><br>
-{% for response in responses[i] %}
+<strong>Q:</strong> {{ question['question'] }}<br>
+
+{% if state['done'] == 2 or i != len(questions)-1 %}
+
+<strong>A:</strong> <em>{{ question['first_answer'] }}</em><br>
+{% for response in responses[i+1] %}
 {% if response['name'] == name %}
 <div class="final_answer me">
 {% else %}
@@ -16,8 +24,19 @@ A: <em>{{ question['answer'] }}</em><br>
 {% endif %}
 	<h4>{{ response['name'] }}</h4>
 	<span>{{ response['answer'] }}</span>
+	{% if response['score'] == question['score'] %}
+	<span class="score good">
+	{% elif response['score'] == 0 %}
+	<span class="score bad">
+	{% else %}
+	<span class="score">
+	{% endif %}
+	{{ response['score'] }}/{{ question['score'] }}</span>
 </div>
 {% endfor %}
+
+{% endif %}
+
 </div>
 {% endfor %}
 
