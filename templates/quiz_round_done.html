@@ -11,7 +11,7 @@
 <span class="score">{{ question['score'] }} points</span>
 {% endif %}
 <h3>Question {{ i+1 }}</h3>
-<strong>Q:</strong> {{ question['question'] }}<br>
+<strong>Q:</strong> {{ question['question']|safe }}<br>
 
 {% if state['done'] == 2 or i != len(questions)-1 %}
 

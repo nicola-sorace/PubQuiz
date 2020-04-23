@@ -23,7 +23,7 @@ def init_db():
     cur.execute('CREATE TABLE IF NOT EXISTS players ( name TEXT, score INT, last_seen INT )')
     cur.execute('DELETE FROM players')
     cur.execute('CREATE TABLE IF NOT EXISTS questions ( r_num INT, q_num INT, question TEXT, type TEXT, choices TEXT, answer TEXT, score INT )')
-    cur.execute('CREATE TABLE IF NOT EXISTS responses ( r_num INT, q_num INT, name TEXT, answer TEXT, score INT )')
+    cur.execute('CREATE TABLE IF NOT EXISTS responses ( r_num INT, q_num INT, name TEXT, answer TEXT, score INT, hidden INT )')
     cur.execute('CREATE TABLE IF NOT EXISTS state ( r_num INT, q_num INT, done INT )')
     state = cur.execute('SELECT * FROM state').fetchone()
     if state == None:
@@ -110,7 +110,7 @@ def quiz_endpoint():
 
                 # Commit response
                 if response == None:
-                    cur.execute('INSERT INTO responses (r_num, q_num, name, answer, score) VALUES (?,?,?,?,?)', (r_num, q_num, name, ans_val, score))
+                    cur.execute('INSERT INTO responses (r_num, q_num, name, answer, score, hidden) VALUES (?,?,?,?,?,1)', (r_num, q_num, name, ans_val, score))
                 else:
                     cur.execute('UPDATE responses SET answer=?, score=? WHERE r_num=? AND q_num=? AND name=?', (ans_val, score, r_num, q_num, name))
                 db.commit()
@@ -121,7 +121,7 @@ def update_scores():
     cur = db.cursor()
     players = cur.execute('SELECT name FROM players').fetchall()
     for player in players:
-        score = cur.execute('SELECT SUM(score) FROM responses WHERE name=?', (player['name'],)).fetchone()[0]
+        score = cur.execute('SELECT SUM(score) FROM responses WHERE name=? AND hidden=0', (player['name'],)).fetchone()[0]
         if score == None:
             score = 0
         cur.execute('UPDATE players SET score=? WHERE name=?', (score, player['name']))
@@ -146,6 +146,8 @@ def control():
             if done == 1 and q_num > 0:
                 # Reveal answer
                 done = 2;
+                # Unhide response scores
+                cur.execute('UPDATE responses SET hidden=0 WHERE r_num<=? AND q_num<=?', (r_num, q_num))
                 # We update scores here to show new points only when answer is revealed
                 update_scores()
             elif next_q != None:
