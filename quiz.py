@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, session, abort, redirect, g
+import logging
 import sqlite3
 import hashlib, time
 
@@ -16,6 +17,7 @@ def get_db():
 
 @app.before_first_request
 def init_db():
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
     db = get_db()
     cur = db.cursor()
     cur.execute('CREATE TABLE IF NOT EXISTS players ( name TEXT, score INT, last_seen INT )')
@@ -94,12 +96,24 @@ def quiz_endpoint():
         if param.startswith('ans_'):
             q_num = int(param[4:])
             ans_val = request.form[param]
-            r = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=? AND name=?', (r_num, q_num, name)).fetchone()
-            if r == None:
-                cur.execute('INSERT INTO responses (r_num, q_num, name, answer, score) VALUES (?,?,?,?, 0)', (r_num, q_num, name, ans_val))
-            else:
-                cur.execute('UPDATE responses SET answer=? WHERE r_num=? AND q_num=? AND name=? AND score=0', (ans_val, r_num, q_num, name))
-    db.commit()
+            response = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=? AND name=?', (r_num, q_num, name)).fetchone()
+
+            # Only update response if it is new
+            if response == None or response['answer'] != ans_val:
+                # Auto-score new answer
+                score = 0
+                question = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchone()
+                for right_answer in question['answer'].split(','):
+                    if ans_val.lower() == right_answer.lower():
+                        score = question['score']
+                        break
+
+                # Commit response
+                if response == None:
+                    cur.execute('INSERT INTO responses (r_num, q_num, name, answer, score) VALUES (?,?,?,?,?)', (r_num, q_num, name, ans_val, score))
+                else:
+                    cur.execute('UPDATE responses SET answer=?, score=? WHERE r_num=? AND q_num=? AND name=?', (ans_val, score, r_num, q_num, name))
+                db.commit()
     return 'ok'
 
 def update_scores():
@@ -107,7 +121,6 @@ def update_scores():
     cur = db.cursor()
     players = cur.execute('SELECT name FROM players').fetchall()
     for player in players:
-        print(player)
         score = cur.execute('SELECT SUM(score) FROM responses WHERE name=?', (player['name'],)).fetchone()[0]
         if score == None:
             score = 0
@@ -133,6 +146,8 @@ def control():
             if done == 1 and q_num > 0:
                 # Reveal answer
                 done = 2;
+                # We update scores here to show new points only when answer is revealed
+                update_scores()
             elif next_q != None:
                 # Next question
                 q_num += 1
@@ -198,7 +213,7 @@ def control():
         cur.execute('UPDATE state SET r_num=?, q_num=?, done=?', (r_num, q_num, done))
         db.commit()
 
-    if done == 2:
+    if done and q_num > 0:
         # Show question-scoring tools
         responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchall()
         max_score = cur.execute('SELECT score FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchone()[0]
@@ -207,13 +222,15 @@ def control():
         max_score = None
 
     if request.method == 'POST' and request.form.get('update_scores'):
-        print('updating scores')
         for response in responses:
             name = response['name']
             score = request.form['resp_'+name]
             cur.execute('UPDATE responses SET score=? WHERE r_num=? AND q_num=? AND name=?', (score, r_num, q_num, name))
         db.commit()
-        update_scores()
+
+        if done == 2:
+            # Only update scores now if answer is already revealed
+            update_scores()
 
         # Update responses so that control page shows the right scores
         responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchall()
@@ -229,8 +246,11 @@ def login():
         player = db.cursor().execute('SELECT * FROM players WHERE name=?', (name,)).fetchone()
         if player == None or (time.time() - player['last_seen']) > 4 or name == session.get('name'):
             # Player name is available, login
-            db.cursor().execute('INSERT INTO players (name, score, last_seen) VALUES (?, 0, ?)', (name, int(time.time())))
-            db.commit()
+            print('Login from', request.remote_addr, 'as', name)
+            if player == None:
+                # If the name is new, create a new player
+                db.cursor().execute('INSERT INTO players (name, score, last_seen) VALUES (?, 0, ?)', (name, int(time.time())))
+                db.commit()
             session['name'] = name
             return redirect('/', code=302)
         else:
@@ -255,7 +275,6 @@ def main():
     return render_template('main.html', name=name)
 
 if __name__ == '__main__':
-    print(new_secret())
     app.secret_key = new_secret()
     app.run(host='0.0.0.0', port=5000, debug=True)
 
