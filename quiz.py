@@ -198,6 +198,7 @@ def control():
                         # Back to previous round's answers
                         prev_q = cur.execute('SELECT * FROM questions WHERE r_num=? ORDER BY q_num DESC', (r_num-1, )).fetchone()
                         done = 2
+                        r_num -= 1
                         q_num = prev_q['q_num']
 
         elif request.form.get('kick_players') != None:

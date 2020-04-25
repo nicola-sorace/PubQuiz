@@ -43,7 +43,11 @@
 				var ans_elems = document.getElementsByClassName('answer');
 				var ans_vals = new Array(ans_elems.length);
 				for (var i=0; i<ans_elems.length; i++) {
-					ans_vals[i] = ans_elems[i].value;
+					if (ans_elems[i].type == 'radio') {
+						ans_vals[i] = ans_elems[i].checked;
+					} else {
+						ans_vals[i] = ans_elems[i].value;
+					}
 				}
 
 				
@@ -78,8 +82,16 @@
 				<!--Restore current answers-->
 				var ans_elems = document.getElementsByClassName('answer');
 				for (var i=0; i<ans_vals.length; i++) {
-					var pending = ans_vals[i] !== ans_elems[i].value;
-					ans_elems[i].value = ans_vals[i];
+					var pending
+
+					if (ans_elems[i].type == 'radio') {
+						pending = ans_vals[i] !== ans_elems[i].checked;
+						ans_elems[i].checked = ans_vals[i];
+					} else {
+						pending = ans_vals[i] !== ans_elems[i].value;
+						ans_elems[i].value = ans_vals[i];
+					}
+
 					if (pending) {
 						set_pending(ans_elems[i]);
 					} else {
@@ -114,9 +126,13 @@
 			var answers = document.getElementsByClassName('answer');
 			for (var i=0; i<answers.length; i++) {
 				var ans = answers[i];
-				post_string += ans.id + '=' + encodeURIComponent(ans.value);
-				if (i < answers.length -1) {
-					post_string += '&';
+				if (ans.type == 'text' || (ans.type == 'radio' && ans.checked)){
+					post_string += ans.name + '=' + encodeURIComponent(ans.value);
+					console.log(ans.type);
+					console.log(ans.value);
+					if (i < answers.length -1) {
+						post_string += '&';
+					}
 				}
 			}
 

@@ -12,13 +12,28 @@
 {% endif %}
 <h3>Question {{ i+1 }}</h3>
 {{ question['question']|safe }}<br>
+
 {% if question['type'] == 'entry' %}
-<input type="text" size="32" name="ans_{{i+1}}" id="ans_{{i+1}}" class="answer"
+
+<input type="text" size="30" name="ans_{{i+1}}" id="ans_{{i+1}}" class="answer"
 {% if i+1 in answers %}
 value="{{ answers[i+1] }}"
 {% endif %}
 >
+
+{% elif question['type'] == 'choice' %}
+
+{% for choice in question['choices'].split(',') %}
+<input type="radio" name="ans_{{i+1}}" id="ans_{{i+1}}_{{choice}}" class="answer" value="{{choice}}"
+{% if i+1 in answers and answers[i+1] == choice %}
+selected
 {% endif %}
+>
+<label for="ans_{{i+1}}_{{choice}}">{{choice}}</label><br>
+{% endfor %}
+
+{% endif %}
+
 </div>
 {% endfor %}
 

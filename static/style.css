@@ -75,7 +75,7 @@ div.player_list ul li {
 	margin-bottom: 1em;
 }
 div.player_list ul li.me {
-	background-color: #aaeeaa;
+	background-color: #9977ee;
 }
 
 div.player_list ul li span.score {
@@ -146,7 +146,7 @@ div.final_answer {
 }
 
 div.final_answer.me {
-	background-color: #aaeeaa;
+	background-color: #9977ee;
 }
 
 div.final_answer h4 {
