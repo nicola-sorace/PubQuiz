@@ -216,13 +216,16 @@ def control():
         cur.execute('UPDATE state SET r_num=?, q_num=?, done=?', (r_num, q_num, done))
         db.commit()
 
+    if q_num > 0:
+        question = cur.execute('SELECT * FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchone()
+    else:
+        question = None
+
     if done and q_num > 0:
         # Show question-scoring tools
         responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchall()
-        max_score = cur.execute('SELECT score FROM questions WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchone()[0]
     else:
         responses = None
-        max_score = None
 
     if request.method == 'POST' and request.form.get('update_scores'):
         for response in responses:
@@ -238,7 +241,7 @@ def control():
         # Update responses so that control page shows the right scores
         responses = cur.execute('SELECT * FROM responses WHERE r_num=? AND q_num=?', (r_num, q_num)).fetchall()
 
-    return render_template('control.html', responses=responses, max_score=max_score)
+    return render_template('control.html', responses=responses, question=question)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
