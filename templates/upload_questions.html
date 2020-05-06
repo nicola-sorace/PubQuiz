@@ -1,0 +1,43 @@
+
+<html>
+	<head>
+		<title>Upload Questions</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+	</head>
+	<body>
+		{% if success != None %}
+		{% if success %}
+		<h2>Questions uploaded successfully!</h2>
+		<hr>
+		<h1>Questions Preview:</h1>
+		{% for question in questions %}
+		<h2>Round {{ question['r_num'] }}, Question {{ question['q_num'] }} ({{ question['score'] }} points):</h2>
+		<div class="question">
+		<strong>Question:</strong><br>
+		{{ question['question']|safe }}
+		<br><br>
+		{% if question['type'] == 'choice' %}
+		<strong>Choices:</strong><br>
+		{{ question['choices'] }}
+		<br><br>
+		{% endif %}
+		<strong>Answer(s):</strong><br>
+		{{ question['answer'] }}
+		</div>
+		{% endfor %}
+		{% else %}
+		<h2>Looks like there was an error in your questions file 😢</h2>
+		Please review the question writing instructions
+		{% endif %}
+		<hr>
+		{% endif %}
+
+		<h1>Upload questions</h1>
+		<form action="/upload_questions" method="POST" enctype="multipart/form-data">
+			<label for="questions_file">Please upload a questions file:</label><br>
+
+			<input type="file" name="questions_file" accept=".txt, .csv"><br>
+			<input type="submit" name="file_upload" value="Upload">
+		</form>
+	</body>
+</html>

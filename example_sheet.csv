@@ -1,0 +1,8 @@
+Type,Score,Question,Answer,Choices
+Round 1,,,,
+entry,1,What is 1+1?,2:two,
+choice,2,What colour is blood?,Red,Red:Blue:Green
+entry,1,Say ‘apple’,apple,
+Round 2,,,,
+choice,1,Which is biggest?,big,big:small:tiny
+entry,1,Which is longest?,A stick,

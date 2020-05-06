@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, session, abort, redirect, g
+from functools import wraps
 import logging
 import sqlite3
 import hashlib, time
@@ -36,6 +37,16 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+# Admin-only access decorator
+def admin_only(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        # user is available from @login_required
+        if not session.get('name') == SECRET_ADMIN_NAME:
+            return redirect('/', 403)
+        return f(*args, **kwargs)
+    return wrap
+
 @app.route('/quiz_view')
 def quiz_view():
     db = get_db()
@@ -49,7 +60,7 @@ def quiz_view():
     else:
         cur.execute('UPDATE players SET last_seen=? WHERE name=?', (int(time.time()), name))
         db.commit()
-    
+
     state = cur.execute('SELECT * FROM state').fetchone()
     players = cur.execute('SELECT * FROM players WHERE name!=? ORDER BY score DESC', (SECRET_ADMIN_NAME,)).fetchall()
     r_num = state['r_num']
@@ -129,6 +140,7 @@ def update_scores():
 
 
 @app.route('/control', methods=['GET', 'POST'])
+@admin_only
 def control():
     db = get_db()
     cur = db.cursor()
@@ -243,6 +255,68 @@ def control():
 
     return render_template('control.html', responses=responses, question=question)
 
+def import_questions_from_stream(db, cur, stream):
+    cur.execute('DELETE FROM questions')
+    try:
+        r_num = None
+        q_num = None
+        for line in stream:
+            line = line.decode("utf-8")[:-1]
+            if line.lower().startswith('round'):
+                # New round
+                r_num = int(line.split(',')[0][5:])
+                q_num = 1
+                continue
+            elif r_num == None:
+                # No rounds started => Ignore line
+                continue
+            question = line.split(',')
+            q_type = question[0]
+            q_score = question[1]
+            q_text = question[2]
+            q_answer = question[3]
+
+            def filter_string(string):
+                for i, char in enumerate(string):
+                    if char == ':':
+                        if string[i-1] == '\\':
+                            string.pop[i-1]
+                        else:
+                            string = string[:i] +','+ string[i+1:]
+                return string
+
+            q_answer = filter_string(q_answer)
+
+            if q_type.lower() == 'entry':
+                cur.execute('INSERT INTO questions (r_num, q_num, type, question, answer, score) VALUES (?, ?, "entry", ?, ?, ?)', (r_num, q_num, q_text, q_answer, q_score))
+            elif q_type.lower() == 'choice':
+                q_choices = question[4]
+                q_choices = filter_string(q_choices)
+                cur.execute('INSERT INTO questions (r_num, q_num, type, question, choices, answer, score) VALUES (?, ?, "choice", ?, ?, ?, ?)', (r_num, q_num, q_text, q_choices, q_answer, q_score))
+            else:
+                raise RuntimeError('Unrecognized question type')
+            q_num += 1
+        db.commit()
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+@app.route('/upload_questions', methods=['GET', 'POST'])
+@admin_only
+def upload_questions():
+    db = get_db()
+    cur = db.cursor()
+    success = None
+    questions = None
+    if 'questions_file' in request.files:
+        q_file = request.files['questions_file']
+        success = import_questions_from_stream(db, cur, q_file.stream)
+        if success:
+            questions = cur.execute("SELECT * FROM QUESTIONS")
+
+    return render_template('upload_questions.html', success=success, questions=questions)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'name' in request.form:
@@ -271,7 +345,6 @@ def new_secret():
 
 @app.route('/')
 def main():
-
     if not session.get('name'):
         return redirect('/login', code=302)
     name = session['name']
@@ -282,5 +355,6 @@ def main():
 
 if __name__ == '__main__':
     app.secret_key = new_secret()
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # Upload size limit
     app.run(host='0.0.0.0', port=5000, debug=True)
 
