@@ -12,10 +12,11 @@
 {% endif %}
 <h3>Question {{ i+1 }}</h3>
 <strong>Q:</strong> {{ question['question']|safe }}<br>
+<div hidden class="answer"><!-- Triggers quiz page update due to new number of 'answer' elements --></div>
 
 {% if state['done'] == 2 or i != len(questions)-1 %}
 
-<strong>A:</strong> <em>{{ question['first_answer'] }}</em><br>
+<strong>A:</strong> <em>{{ question['first_answer']|safe }}</em><br>
 {% for response in responses[i+1] %}
 {% if response['name'] == name %}
 <div class="final_answer me">
@@ -34,6 +35,7 @@
 	{{ response['score'] }}/{{ question['score'] }}</span>
 </div>
 {% endfor %}
+<div hidden class="answer"><!-- Triggers quiz page update due to new number of 'answer' elements --></div>
 
 {% endif %}
 

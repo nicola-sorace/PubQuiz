@@ -43,7 +43,7 @@ def admin_only(f):
     def wrap(*args, **kwargs):
         # user is available from @login_required
         if not session.get('name') == SECRET_ADMIN_NAME:
-            return redirect('/', 403)
+            return redirect('/', 302)
         return f(*args, **kwargs)
     return wrap
 

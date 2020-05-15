@@ -22,7 +22,7 @@
 		<br><br>
 		{% endif %}
 		<strong>Answer(s):</strong><br>
-		{{ question['answer'] }}
+		{{ question['answer']|safe }}
 		</div>
 		{% endfor %}
 		{% else %}
